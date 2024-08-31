@@ -66,58 +66,37 @@ local function detectExecutors()
     return detectedExecutor
 end
 
--- Advanced Hook Function with Unique Lua Syntax
-local function weirdHook(target, callback, executeScript)
-    -- Save the original method
-    local original = getmetatable(_G)[target]
-    
-    if original then
-        -- Define a metatable with custom metamethods
-        local mt = {}
-        mt.__index = function(t, k)
-            if k == target then
-                return function(...)
-                    local args = {...}
-                    local result
-                    -- Safely call the original method if it's a function
-                    if type(original) == "function" then
-                        result = original(t, k)(...)
-                    end
-                    -- Call the callback with the result and arguments
-                    callback(result, table.unpack(args))
-                    
-                    -- Execute the script after detection
-                    if executeScript then
-                        executeScript()
-                    end
-                    return result
-                end
+-- Directly hook into __index metamethod
+local metatable = getmetatable(_G) or {}
+local originalIndex = metatable.__index
+
+metatable.__index = function(t, k)
+    local result
+    if k == "__index" then
+        result = originalIndex and originalIndex(t, k)
+    else
+        result = rawget(t, k)
+    end
+
+    if type(result) == "function" then
+        local success, retVal = pcall(result, t, k)
+        if success then
+            local detectedExec = detectExecutors()
+            if detectedExec then
+                print("Detected Executor: " .. detectedExec)
+                executeAllScripts()
+            else
+                print("No known executor detected.")
             end
-            return rawget(t, k)
+            return retVal
         end
-        setmetatable(_G, mt)
-    else
-        warn("Original method not found.")
-    end
-end
-
--- Define the callback function for the hook
-local function hookCallback(result, ...)
-    -- Detect executors
-    local detectedExec = detectExecutors()
-    
-    if detectedExec then
-        print("Detected Executor: " .. detectedExec)
-        executeAllScripts()
-    else
-        print("No known executor detected.")
     end
     
-    -- Continue with original behavior
-    return result(...)
+    return result
 end
 
--- Apply Hook with Advanced Syntax
-weirdHook("__index", hookCallback, executeAllScripts)
+-- Set the metatable for _G
+setmetatable(_G, metatable)
 
--- The hook will activate when the target method is called
+-- Example usage
+-- This script now executes scripts from the provided URLs if an executor is detected
