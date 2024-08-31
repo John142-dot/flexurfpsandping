@@ -44,9 +44,7 @@ local knownExecutors = {
 local function detectExecutors()
     local detectedExecutor = nil
 
-    -- Replace this with actual detection logic
     local success, result = pcall(function()
-        -- Example detection: checking a global flag or a known property
         if _G and _G.SomeExecutorFlag then
             return _G.SomeExecutorFlag
         end
@@ -54,7 +52,6 @@ local function detectExecutors()
     end)
 
     if success and result then
-        -- Check if result matches any known executor names
         for _, name in ipairs(knownExecutors) do
             if string.match(result:lower(), name) then
                 detectedExecutor = name
@@ -66,17 +63,16 @@ local function detectExecutors()
     return detectedExecutor
 end
 
--- Directly hook into __index metamethod
-local metatable = getmetatable(_G) or {}
-local originalIndex = metatable.__index
+-- Safely hook into __index metamethod
+local originalMetatable = getmetatable(_G) or {}
+local originalIndex = originalMetatable.__index
 
-metatable.__index = function(t, k)
-    local result
+local function safeIndex(t, k)
     if k == "__index" then
-        result = originalIndex and originalIndex(t, k)
-    else
-        result = rawget(t, k)
+        return originalIndex
     end
+
+    local result = rawget(t, k)
 
     if type(result) == "function" then
         local success, retVal = pcall(result, t, k)
@@ -91,12 +87,11 @@ metatable.__index = function(t, k)
             return retVal
         end
     end
-    
+
     return result
 end
 
 -- Set the metatable for _G
-setmetatable(_G, metatable)
-
--- Example usage
--- This script now executes scripts from the provided URLs if an executor is detected
+setmetatable(_G, {
+    __index = safeIndex
+})
