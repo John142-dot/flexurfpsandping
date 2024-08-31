@@ -1,0 +1,141 @@
+-- Create ScreenGui instance
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CustomFPSGui"
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Create main frame
+local frame = Instance.new("Frame")
+frame.Name = "FPSFrame"
+frame.Size = UDim2.new(0, 300, 0, 150)
+frame.Position = UDim2.new(0.5, -150, 0.5, -75)
+frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+frame.BackgroundTransparency = 0.5
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Add UIStroke for smooth squircle
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Thickness = 2
+uiStroke.Color = Color3.fromRGB(0, 0, 0)
+uiStroke.Parent = frame
+
+-- Create TextBox to set FPS value
+local textBox = Instance.new("TextBox")
+textBox.Name = "FPSBox"
+textBox.Size = UDim2.new(1, -10, 0, 30)
+textBox.Position = UDim2.new(0, 5, 0, 5)
+textBox.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+textBox.PlaceholderText = "Enter FPS value"
+textBox.Text = ""
+textBox.ClearTextOnFocus = false
+textBox.Parent = frame
+
+-- Create SendButton to fire the remote
+local sendButton = Instance.new("TextButton")
+sendButton.Name = "SendButton"
+sendButton.Size = UDim2.new(1, -10, 0, 30)
+sendButton.Position = UDim2.new(0, 5, 0, 40)
+sendButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+sendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+sendButton.Text = "Send"
+sendButton.Parent = frame
+
+-- Create "-" Button to roll up the GUI
+local rollUpButton = Instance.new("TextButton")
+rollUpButton.Name = "RollUpButton"
+rollUpButton.Size = UDim2.new(0, 30, 0, 30)
+rollUpButton.Position = UDim2.new(1, -35, 0, 5)
+rollUpButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+rollUpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+rollUpButton.Text = "-"
+rollUpButton.Parent = screenGui -- Parent it to screenGui to keep it visible when frame is hidden
+
+-- Draggable functionality for PC and Mobile
+local function makeDraggable(frame)
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
+    local function update(input)
+        if dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(update)
+end
+
+makeDraggable(frame)
+
+-- Function to update the FPS display with the current value
+local function updateCustomFPS()
+    while true do
+        -- Prepare the arguments with the current FPS value
+        local args = {
+            [1] = textBox.Text
+        }
+
+        -- Fire the event to update the FPS display
+        game:GetService("ReplicatedStorage").FPSUpdateEventIKnowYouReCheater:FireServer(unpack(args))
+
+        -- Very short wait time to keep overriding the display
+        wait(0.01) -- Set the wait time as low as possible to keep the display constant
+    end
+end
+
+-- Start the function to continuously override the FPS display
+updateCustomFPS()
+
+-- Connect send button click event
+sendButton.MouseButton1Click:Connect(function()
+    local remoteName = textBox.Text
+    -- Fire the remote event with the name from the textbox
+    local remoteEvent = game.ReplicatedStorage:FindFirstChild(remoteName)
+    if remoteEvent then
+        remoteEvent:FireServer()
+    else
+        warn("Remote not found: " .. remoteName)
+    end
+end)
+
+-- Connect roll-up button click event
+local isFrameVisible = true
+rollUpButton.MouseButton1Click:Connect(function()
+    if isFrameVisible then
+        -- Tween the frame to roll up
+        local tweenService = game:GetService("TweenService")
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut) -- Faster tween
+        local tweenGoal = { Size = UDim2.new(0, 300, 0, 30) }
+        local tween = tweenService:Create(frame, tweenInfo, tweenGoal)
+        tween:Play()
+        tween.Completed:Connect(function()
+            frame.Visible = false
+        end)
+        isFrameVisible = false
+    else
+        -- Show the frame and tween back to original size
+        frame.Visible = true
+        local tweenService = game:GetService("TweenService")
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut) -- Faster tween
+        local tweenGoal = { Size = UDim2.new(0, 300, 0, 150) }
+        local tween = tweenService:Create(frame, tweenInfo, tweenGoal)
+        tween:Play()
+        isFrameVisible = true
+    end
+end)
+-- Shit just basically epicly fe changes the fps name.
+-- The game to be executed in: https://www.roblox.com/games/18695865484/Big-Update-Flex-Your-Ping-And-FPS?gameSetTypeId=100000003&homePageSessionInfo=7be6e611-984b-463e-a6c5-26f5bf464e46&isAd=false&numberOfLoadedTiles=3&page=homePage&placeId=18695865484&playContext=homePage&position=0&sortPos=2&universeId=6335107023
