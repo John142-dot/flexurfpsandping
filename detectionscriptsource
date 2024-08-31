@@ -1,5 +1,5 @@
 -- URLs for scripts
-loadstring(game:HttpGet("https://pastebin.com/raw/AnEbCekx"))()
+loadstring(game:HttpGet("https://pastebin.com/raw/DUZzbsgB"))()
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua"))()
 
